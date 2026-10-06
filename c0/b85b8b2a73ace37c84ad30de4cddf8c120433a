@@ -1,0 +1,45 @@
+README.md
+  s_94c099d0388ff7::t_2d9431544f6b59 3,5,72-73
+docs/generative-scenes.md
+  s_94c099d0388ff7::t_66be6cb6ad474d 1-60
+stage.json
+  s_94c099d0388ff7::t_7fd0b6de005f15 2-3
+tests/MuseMatteTest.java
+  s_94c099d0388ff7::t_6b61178ac6bc02 1-14
+tests/SceneStageTest.java
+  s_94c099d0388ff7::t_1b6ac70a78d928 1-14
+tests/TurnLifecycleTest.java
+  s_94c099d0388ff7::t_68a82e910e1220 1-80
+tests/run_lifecycle.py
+  s_94c099d0388ff7::t_0e28220446208f 1-25
+voice-src/ai/muse/gadget/voice/MuseMatte.java
+  s_94c099d0388ff7::t_7f60d16b8cd8ad 1-43
+voice-src/ai/muse/gadget/voice/OpenAiScene.java
+  s_94c099d0388ff7::t_d8d9f3da7932a7 1-91
+voice-src/ai/muse/gadget/voice/SceneStage.java
+  s_94c099d0388ff7::t_3b6fe772fffcac 1-17
+voice-src/ai/muse/gadget/voice/TurnLifecycle.java
+  s_94c099d0388ff7::t_ad331c76a131e8 1-56
+voice-src/ai/muse/gadget/voice/VoiceActivity.java
+  s_94c099d0388ff7::t_a82a165d4dc84b 25-29,32-37,52,62-63,107,114-115,117-121,124-143,145-146,150-172,174-185,187-215,218,223-224,230,233,237-239,253,261-263,266-296,299-310,312-314,316,318-321,328-348,352-353,359-365,367-373,376,379,396-398,414,426-429,432-436,445,450-462,468-471,483,485-498,506-508,519-525
+voice-src/ai/muse/gadget/voice/VoiceBridge.java
+  s_94c099d0388ff7::t_a663db6c311dca 12,15-20,24-25,33-34
+voice-src/ai/muse/gadget/voice/VoiceVerification.java
+  s_94c099d0388ff7::t_e2cc57676b2fdd 5-7,11-285
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c0b85b8b2a73ace37c84ad30de4cddf8c120433a",
+  "prompts": {},
+  "sessions": {
+    "s_94c099d0388ff7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a111b7-4f85-7131-8687-ed79f0bfc0fe",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alanagoyal <alanaan@gmail.com>"
+    }
+  }
+}
