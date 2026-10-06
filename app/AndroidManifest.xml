@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
@@ -19,7 +20,7 @@
             </intent-filter>
         </activity>
         <activity android:exported="false" android:name="ai.muse.gadget.ui.MainActivity" android:screenOrientation="portrait"/>
-        <service android:exported="false" android:foregroundServiceType="connectedDevice" android:name="ai.muse.gadget.service.GadgetService"/>
+        <service android:exported="false" android:foregroundServiceType="connectedDevice|microphone" android:name="ai.muse.gadget.service.GadgetService"/>
     </application>
 <instrumentation android:name="ai.muse.gadget.voice.VoiceVerification" android:targetPackage="ai.muse.gadget.fixed"/>
 </manifest>

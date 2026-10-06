@@ -33,5 +33,25 @@
     "path": "tools/voice/json.jar",
     "url": "https://repo.maven.apache.org/maven2/org/json/json/20240303/json-20240303.jar",
     "sha256": "3cf6cd6892e32e2b4c1c39e0f52f5248a2f5b37646fdfbb79a66b46b618414ed"
+  },
+  {
+    "path": "tools/voice/vosk.aar",
+    "url": "https://repo.maven.apache.org/maven2/com/alphacephei/vosk-android/0.3.47/vosk-android-0.3.47.aar",
+    "sha256": "e3b82bb877753569f5e5f007807e4bc6165c34ba04e772d1df93552af0d27ffa"
+  },
+  {
+    "path": "tools/voice/jna.aar",
+    "url": "https://repo.maven.apache.org/maven2/net/java/dev/jna/jna/5.13.0/jna-5.13.0.aar",
+    "sha256": "3a03daf5a7212201c3a9b44f734dfc9babb3addcb5cbfa639f9f535e887925c0"
+  },
+  {
+    "path": "tools/voice/model.zip",
+    "url": "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip",
+    "sha256": "30f26242c4eb449f948e42cb302dd7a686cb29a3423a8367f99ff41780942498"
+  },
+  {
+    "path": "tools/voice/rhvoice.apk",
+    "url": "https://f-droid.org/repo/com.github.olga_yakovleva.rhvoice.android_118040.apk",
+    "sha256": "fdb0f7d6f3ec455477a84aa8cc86d1f2d580cb180d69a0c780240975c2efd288"
   }
 ]

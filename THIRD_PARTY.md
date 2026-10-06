@@ -10,7 +10,10 @@ artwork. Those files are not included in any commit.
 - **Optional chat-header image:** supply local `muse/idle.gif`. Without
   it, the header just says Muse. This artwork is not included, and no
   redistribution permission is granted here.
+- **Recognition test:** optional `voice-test.pcm`, 16 kHz mono signed-16-bit
+  PCM containing “one”. Supply a recording you may use.
 
 Pass these assets to `prepare.py --assets /path/to/assets`. Imported code and
 assets stay in ignored `patched/`. Downloads in `dependencies.json` are pinned
-by SHA-256 and retain their own licenses. Muse requires an account.
+by SHA-256 and retain their own licenses. RHVoice and its voice data are
+installed separately. Muse requires an account.

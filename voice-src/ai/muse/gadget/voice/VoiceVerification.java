@@ -22,6 +22,14 @@ public class VoiceVerification extends Instrumentation {
             input.setText("");android.view.View v=a.getWindow().getDecorView();v.measure(android.view.View.MeasureSpec.makeMeasureSpec(720,android.view.View.MeasureSpec.EXACTLY),android.view.View.MeasureSpec.makeMeasureSpec(720,android.view.View.MeasureSpec.EXACTLY));v.layout(0,0,720,720);Bitmap b=Bitmap.createBitmap(720,720,Bitmap.Config.ARGB_8888);v.draw(new Canvas(b));
             FileOutputStream out=new FileOutputStream(new File(a.getExternalFilesDir(null),"chat-ui.png"));try{b.compress(Bitmap.CompressFormat.PNG,100,out);}finally{out.close();b.recycle();}
         }catch(Throwable e){failure[0]=e;}}});if(failure[0]!=null)throw new Exception(failure[0]);result.putBoolean("editable_composer",true);
+        if("true".equals(args.getString("dictationOnly"))){
+            OfflineDictation dictation=(OfflineDictation)field(a,"dictation");
+            for(int i=0;i<150&&field(dictation,"model")==null;i++)Thread.sleep(200);
+            org.vosk.Model model=(org.vosk.Model)field(dictation,"model");if(model==null)throw new Exception("Dictation model did not load");
+            org.vosk.Recognizer recognizer=new org.vosk.Recognizer(model,16000f);InputStream in=getTargetContext().getAssets().open("voice-test.pcm");StringBuilder words=new StringBuilder();
+            try{byte[] data=new byte[3200];int n;while((n=in.read(data))!=-1)if(recognizer.acceptWaveForm(data,n))words.append(new org.json.JSONObject(recognizer.getResult()).optString("text")).append(' ');words.append(new org.json.JSONObject(recognizer.getFinalResult()).optString("text"));}finally{in.close();recognizer.close();}
+            if(words.length()==0)throw new Exception("Fixture transcription was empty");result.putString("dictation",words.toString());
+        }
         if("true".equals(args.getString("fullTurn"))){
             for(int i=0;i<150&&!((Boolean)field(a,"connected"));i++)Thread.sleep(200);
             if(!((Boolean)field(a,"connected")))throw new Exception("Pair Muse before a live test");
