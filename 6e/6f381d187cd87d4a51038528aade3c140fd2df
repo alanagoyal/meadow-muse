@@ -1,0 +1,51 @@
+.gitignore
+  s_94c099d0388ff7::t_c0ae9804af015f 1-12
+LICENSE
+  s_94c099d0388ff7::t_287293621f091a 1-21
+README.md
+  s_94c099d0388ff7::t_1bcf985421b869 1-81
+THIRD_PARTY.md
+  s_94c099d0388ff7::t_0246e8095f18ac 1-48
+app/AndroidManifest.xml
+  s_94c099d0388ff7::t_86252fca4d86db 1-25
+build_voice.py
+  s_94c099d0388ff7::t_f9f8fc3953c71d 1-32
+dependencies.json
+  s_94c099d0388ff7::t_3e181a917dcaf9 1-37
+patch_apk.py
+  s_94c099d0388ff7::t_89e1e4a696dd8e 1-71
+patch_connection.py
+  s_94c099d0388ff7::t_9310dc4143d218 1-42
+patches/SignalQueue.smali
+  s_94c099d0388ff7::t_b71b170d659326 1-50
+prepare.py
+  s_94c099d0388ff7::t_d26e22191b1087 1-70
+setup.py
+  s_94c099d0388ff7::t_cd20e5f32328e4 1-50
+stage.json
+  s_94c099d0388ff7::t_26635fe1204500 1-5
+voice-src/ai/muse/gadget/voice/VoiceActivity.java
+  s_94c099d0388ff7::t_28695d6bca8080 1-106
+voice-src/ai/muse/gadget/voice/VoiceBridge.java
+  s_94c099d0388ff7::t_cd341388e00231 1-19
+voice-src/ai/muse/gadget/voice/VoiceVerification.java
+  s_94c099d0388ff7::t_1a86e9b349ccc7 1-36
+voice-stubs/ai/muse/gadget/service/GadgetService.java
+  s_94c099d0388ff7::t_ebf81f49a828a7 1-16
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6e6f381d187cd87d4a51038528aade3c140fd2df",
+  "prompts": {},
+  "sessions": {
+    "s_94c099d0388ff7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a111b7-4f85-7131-8687-ed79f0bfc0fe",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alanagoyal <alanaan@gmail.com>"
+    }
+  }
+}
