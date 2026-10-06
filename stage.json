@@ -1,7 +1,8 @@
 {
-  "stage": 4,
-  "title": "Voice conversation with the SDK animation",
+  "stage": 5,
+  "title": "Voice conversation with website animations",
   "assets": [
-    "jollybot.gif"
+    "muse/idle.gif",
+    "muse/working.gif"
   ]
 }

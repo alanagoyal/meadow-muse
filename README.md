@@ -1,7 +1,7 @@
 # Meadow Muse
 
-Hold the on-screen button or volume-up, speak, and release. The SDK’s
-Jollybot animation accompanies the spoken reply.
+Hold Muse or volume-up to speak;
+release to send. The character listens, works, and speaks.
 
 ## Build
 
@@ -14,7 +14,7 @@ python3 prepare.py --apk /path/to/meadow-gadget.apk --assets /path/to/assets
 python3 build_voice.py
 ```
 
-The asset directory must contain `jollybot.gif`; see [external inputs](THIRD_PARTY.md).
+The asset directory must contain `muse/idle.gif` and `muse/working.gif`; see [external inputs](THIRD_PARTY.md).
 Java comes from `JAVA_HOME` or `PATH`. Preparation creates ignored `patched/`;
 use a fresh checkout when switching versions.
 
