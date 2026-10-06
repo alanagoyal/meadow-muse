@@ -1,5 +1,7 @@
 {
-  "stage": 3,
-  "title": "Text and dictation with OpenAI TTS",
-  "assets": []
+  "stage": 4,
+  "title": "Voice conversation with the SDK animation",
+  "assets": [
+    "jollybot.gif"
+  ]
 }
