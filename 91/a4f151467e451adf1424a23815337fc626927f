@@ -1,0 +1,37 @@
+README.md
+  s_4404db7b0a4948::t_e5722508ff08c9 1,3-5,7,9-35,43-49,56,59,61-67,69-72,74,77-90,94-101,103-104
+stage.json
+  s_4404db7b0a4948::t_b17a437a031760 2-3
+tests/PcmStreamTest.java
+  s_4404db7b0a4948::t_dfb3312697e01f 10,21,49-93,105-109,119-120
+tests/TurnLifecycleTest.java
+  s_4404db7b0a4948::t_f7397394b3aa2c 34-43
+voice-src/ai/muse/gadget/voice/OpenAiSpeech.java
+  s_4404db7b0a4948::t_d7fec3e500671b 99
+voice-src/ai/muse/gadget/voice/PcmStream.java
+  s_4404db7b0a4948::t_764885211cda88 9-10,28,49,56,58-60,74-75
+voice-src/ai/muse/gadget/voice/TurnLifecycle.java
+  s_4404db7b0a4948::t_60005875ab7f89 8,24,26,41
+voice-src/ai/muse/gadget/voice/VoiceActivity.java
+  s_4404db7b0a4948::t_1a6f5334e0aff8 25-26,97,102,121,124,133-134,137-139,146-147,149,157,165-166,176,186,190,201,203,250,255,261,263,297-298,301-302,351-353,357,363-365,375,390,402,415,426-427,439-460
+voice-src/ai/muse/gadget/voice/VoiceBridge.java
+  s_4404db7b0a4948::t_baf4df1d95f9f2 6,11,18,26,34-35
+voice-src/ai/muse/gadget/voice/VoiceVerification.java
+  s_4404db7b0a4948::t_c3bb75c7a5de7a 2,5,7-8,10-16,18-26,28-39,41-64,66,70,72-106
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "91a4f151467e451adf1424a23815337fc626927f",
+  "prompts": {},
+  "sessions": {
+    "s_4404db7b0a4948": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a11274-3e37-7bd2-a6a6-2ec3a1d563e6",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alanagoyal <alanaan@gmail.com>"
+    }
+  }
+}
