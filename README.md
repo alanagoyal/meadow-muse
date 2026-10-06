@@ -1,7 +1,7 @@
 # Meadow Muse
 
-Hold Muse or volume-up to speak;
-release to send. The character listens, works, and speaks.
+Generated environments appear behind Muse. Follow-ups can keep the scene;
+a new topic can generate a replacement. A scene failure falls back to voice.
 
 ## Build
 
@@ -32,6 +32,9 @@ pairing. This uses a separate package and a development signing key.
 Put `OPENAI_API_KEY` in ignored `.env.local`, then run
 `python3 provision_openai.py` with Meadow attached. The app stores the key
 privately. Speech uses `gpt-4o-mini-tts` / `marin` and incurs API usage.
+Scene generation uses `gpt-image-2` and the same key. Speech waits for the
+scene or a 30-second fallback. `sceneDecision=keep` reuses the current scene;
+`new` generates another.
 
 ## Code and checks
 
@@ -47,5 +50,6 @@ adb shell am instrument -w -e uiOnly true ai.muse.gadget.fixed/ai.muse.gadget.vo
 sends a live question and requires an unlocked, paired device. Fixture
 recognition does not test the physical microphone; test dictation on Meadow.
 Run `python3 tests/run_pcm.py` for streaming playback checks.
+Run `python3 tests/run_lifecycle.py` for turn and rendering checks.
 
 Our code is MIT; external code, artwork, and services retain their own terms.
