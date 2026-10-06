@@ -1,0 +1,35 @@
+README.md
+  s_94c099d0388ff7::t_8ba2d00c84e410 3,5,55,63-68
+app/AndroidManifest.xml
+  s_94c099d0388ff7::t_60787f6b5aff2c 9,23
+dependencies.json
+  s_94c099d0388ff7::t_25a375b748d5d4 36-55
+stage.json
+  s_94c099d0388ff7::t_45c853396a00b9 2-3
+voice-src/ai/muse/gadget/voice/OfflineDictation.java
+  s_94c099d0388ff7::t_60b9185f705c0e 1-49
+voice-src/ai/muse/gadget/voice/SpeechOutput.java
+  s_94c099d0388ff7::t_670b942f94a0a6 1-4
+voice-src/ai/muse/gadget/voice/VoiceActivity.java
+  s_94c099d0388ff7::t_42a3461f7f7bee 28-32,49,54-59,79-80,88,100-105,108,111-122
+voice-src/ai/muse/gadget/voice/VoiceBridge.java
+  s_94c099d0388ff7::t_06750521fb0064 11,14,17
+voice-src/ai/muse/gadget/voice/VoiceVerification.java
+  s_94c099d0388ff7::t_3f8eaffc41a1d6 25-32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "58f266bef3c46de55c45f274d825e7906507b2f0",
+  "prompts": {},
+  "sessions": {
+    "s_94c099d0388ff7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a111b7-4f85-7131-8687-ed79f0bfc0fe",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alanagoyal <alanaan@gmail.com>"
+    }
+  }
+}
