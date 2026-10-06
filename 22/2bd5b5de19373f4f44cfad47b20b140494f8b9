@@ -1,0 +1,35 @@
+.env.example
+  s_94c099d0388ff7::t_f98ec06df725da 1
+README.md
+  s_94c099d0388ff7::t_d5bc9eea304dd2 3,5,63,65-70
+provision_openai.py
+  s_94c099d0388ff7::t_1fd7290dc3ad7c 1-28
+stage.json
+  s_94c099d0388ff7::t_f6e058f2d37310 2-3
+tests/PcmStreamTest.java
+  s_94c099d0388ff7::t_b4edd3a2703e7a 1-71
+tests/run_pcm.py
+  s_94c099d0388ff7::t_a0b40e1dd4c4c7 1-17
+voice-src/ai/muse/gadget/voice/OpenAiSpeech.java
+  s_94c099d0388ff7::t_8f77f37e6ce1cd 1-188
+voice-src/ai/muse/gadget/voice/PcmStream.java
+  s_94c099d0388ff7::t_de61b3e768b441 1-82
+voice-src/ai/muse/gadget/voice/VoiceActivity.java
+  s_94c099d0388ff7::t_f49b950dd7deda 29,54,80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "222bd5b5de19373f4f44cfad47b20b140494f8b9",
+  "prompts": {},
+  "sessions": {
+    "s_94c099d0388ff7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a111b7-4f85-7131-8687-ed79f0bfc0fe",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alanagoyal <alanaan@gmail.com>"
+    }
+  }
+}
