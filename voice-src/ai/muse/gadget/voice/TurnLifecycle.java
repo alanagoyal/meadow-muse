@@ -5,7 +5,7 @@ import java.util.UUID;
 /** UI-thread-owned conversation lifecycle. No inferred task progress. */
 public final class TurnLifecycle {
     private long generation;
-    private boolean sceneClaimed, sceneResolved=true, replyReleased;
+    private boolean replyReleased;
     private String token = "", phase = "idle";
 
     public long generation(){return generation;}
@@ -21,26 +21,14 @@ public final class TurnLifecycle {
         if(replyToken==null||replyToken.isEmpty())return false;
         return replyToken.equals(token)&&phase.equals("thinking");
     }
-    /** Start one visual job without consuming the pending spoken answer. */
-    public long prepareScene(String sceneToken){
-        if(!accepts(sceneToken)||sceneClaimed)return -1;
-        sceneClaimed=true;sceneResolved=false;return generation;
-    }
-    public boolean resolveScene(long request){
-        if(!sceneActive(request))return false;
-        sceneResolved=true;return true;
-    }
-    /** Claim playback once both the accepted answer and scene outcome are ready. */
+    /** Claim immediate playback exactly once for an accepted answer. */
     public boolean releaseReply(long request){
-        if(!current(request)||!phase.equals("voicing")||!sceneResolved||replyReleased)return false;
+        if(!current(request)||!phase.equals("voicing")||replyReleased)return false;
         replyReleased=true;return true;
     }
     public long reply(String replyToken){
         if(!accepts(replyToken))return -1;
         phase="voicing";return generation;
-    }
-    public boolean sceneActive(long request){
-        return current(request)&&(phase.equals("thinking")||phase.equals("voicing")||phase.equals("speaking"));
     }
     public boolean started(long request){return move(request,"voicing","speaking");}
     public boolean nextChunk(long request){return move(request,"speaking","voicing");}
@@ -50,7 +38,7 @@ public final class TurnLifecycle {
         if(!current(request)||!phase.equals(from))return false;
         phase=to;return true;
     }
-    public void invalidate(){++generation;token="";phase="idle";sceneClaimed=false;sceneResolved=true;replyReleased=false;}
+    public void invalidate(){++generation;token="";phase="idle";replyReleased=false;}
     public void blocked(){invalidate();phase="error";}
     public void ready(){if(phase.equals("error"))phase="idle";}
 }

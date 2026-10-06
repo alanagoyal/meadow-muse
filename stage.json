@@ -1,6 +1,6 @@
 {
-  "stage": 6,
-  "title": "Voice conversation with generated scenes",
+  "stage": 7,
+  "title": "Voice conversation with compact captions",
   "assets": [
     "muse/idle.gif",
     "muse/working.gif"

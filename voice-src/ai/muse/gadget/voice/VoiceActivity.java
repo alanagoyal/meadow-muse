@@ -22,18 +22,14 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
     private volatile boolean recording;
     private volatile Model model;
     private OpenAiSpeech tts;
-    private OpenAiScene scenes;
-    private Bitmap sceneBitmap;
-    private long sceneStart;
-    private boolean scenePending, sceneBeganWhileThinking, sceneArrivedBeforeSpeech, sceneGeneratedThisTurn;
-    private String sceneStatus="", previousContext="", sceneSubject="";
+    private String answerText="";
+    private long sentAt, acceptedAt;
     private FaceView face;
     private String mode = "loading", caption = "getting ready", transcript = "";
     private volatile long turn;
     private final TurnLifecycle lifecycle = new TurnLifecycle();
     private boolean paused;
     private long playback;
-    private static final long COMPLETION_MS = 2600;
     private final Object captureLock = new Object();
     private volatile float level;
     private String reaction = "neutral";
@@ -60,7 +56,6 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
         face = new FaceView();
         setContentView(face);
         new File(getCacheDir(),"muse-world.png").delete(); // Remove the earlier experimental world cache.
-        scenes=new OpenAiScene(this);
         tts = new OpenAiSpeech(this);
         voiceReady=tts.ready();
         Intent intent=new Intent(this,GadgetService.class);
@@ -99,12 +94,12 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
         boolean changed=!mode.equals(next);
         mode=next;caption=text;
         if(next.equals("error")){reaction="neutral";reactionUntil=0;}
-        face.setContentDescription("Muse. "+(connected?"Connected. ":"Disconnected. ")+text+". Hold to talk, release to send. Double tap to start or stop listening.");
+        face.setContentDescription("Muse. "+(answerText.isEmpty()?"":answerText+". ")+(connected?"Connected. ":"Disconnected. ")+text+". Hold to talk, release to send. Double tap to start or stop listening.");
         if(changed)face.announceForAccessibility(text);
         face.invalidate();
     }
     private void refreshReady(){
-        if(destroyed || recording || mode.equals("thinking") || mode.equals("scene-wait") || mode.equals("voicing") || mode.equals("speaking") || mode.equals("complete") || mode.equals("error"))return;
+        if(destroyed || recording || mode.equals("thinking") || mode.equals("voicing") || mode.equals("speaking") || mode.equals("error"))return;
         if(model==null)setMode("loading","getting ready");
         else if(!voiceReady)setMode("error","OpenAI voice needs setup");
         else if(!connected)setMode("connecting","connecting to muse");
@@ -123,38 +118,35 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
     public void onListening(boolean listening){}
     public void onChat(final String text){onReply(text,"neutral","");}
     public void onReply(final String text, final String expression, final String token){ui.post(new Runnable(){public void run(){
-        acceptReply(text,expression,token,"keep");
+        acceptReply(text,expression,token,"");
     }});}
     // Called on the UI thread so the command result reflects actual acceptance.
-    private String acceptReply(String text,String expression,String token,String sceneDecision){
+    private String acceptReply(String text,String expression,String token,String displayText){
         if(destroyed||paused||!connected||!voiceReady)return "voice screen is not ready; ask the user to reopen Muse";
         if(text==null||text.trim().isEmpty())return "text is required";
         if(!lifecycle.accepts(token)){
             android.util.Log.w("MuseVoice","Reply rejected: "+(token==null||token.isEmpty()?"missing turnId":"stale or duplicate turnId")+"; phase="+lifecycle.phase());
             return "reply not accepted: copy the exact turnId from the latest Meadow voice message; do not reuse an earlier turnId";
         }
-        if(!"keep".equals(sceneDecision)&&!"new".equals(sceneDecision))return "sceneDecision is required: keep for a follow-up on the current subject, new for a change of subject";
         long request=lifecycle.generation();
-        if(sceneBitmap!=null&&"new".equals(sceneDecision)&&lifecycle.prepareScene(token)==request){
-            clearScene();generateScene(transcript,request);
-        }
         lifecycle.reply(token);
-        android.util.Log.d("MuseVoice","Reply accepted; scenePending="+scenePending);
+        acceptedAt=SystemClock.uptimeMillis();
+        android.util.Log.d("MuseVoice","Reply accepted; answer_ms="+(acceptedAt-sentAt));
         turn=request;
         transcript=text.trim();
-        previousContext+="\nMuse: "+transcript;
-        if(previousContext.length()>1600)previousContext=previousContext.substring(previousContext.length()-1600);
+        answerText=displayText==null?"":displayText.replaceAll("[*#`]", "").replaceAll("\\s+", " ").trim();
+        if(answerText.length()>90){int cut=answerText.lastIndexOf(' ',87);answerText=answerText.substring(0,cut>0?cut:87)+"…";}
+        face.setAnswer(answerText);
         String remaining=transcript.replaceAll("[*#`]", "");
         while(remaining.length()>3000){int cut=remaining.lastIndexOf(' ',3000);if(cut<1)cut=3000;speech.add(new Reply(remaining.substring(0,cut),expression));remaining=remaining.substring(cut).trim();}
         if(!remaining.isEmpty())speech.add(new Reply(remaining,expression));
-        if(scenePending)setMode("scene-wait","muse is working");
         releaseReply(request);
         return null;
     }
-    public String submitReply(final String text,final String expression,final String token,final String sceneDecision){
-        if(Looper.myLooper()==Looper.getMainLooper())return acceptReply(text,expression,token,sceneDecision);
+    public String submitReply(final String text,final String expression,final String token,final String displayText){
+        if(Looper.myLooper()==Looper.getMainLooper())return acceptReply(text,expression,token,displayText);
         java.util.concurrent.FutureTask<String> task=new java.util.concurrent.FutureTask<String>(new java.util.concurrent.Callable<String>(){
-            public String call(){return acceptReply(text,expression,token,sceneDecision);}
+            public String call(){return acceptReply(text,expression,token,displayText);}
         });
         if(!ui.post(task))return "voice screen unavailable";
         try{return task.get(3,java.util.concurrent.TimeUnit.SECONDS);}
@@ -162,23 +154,16 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
     }
     private void releaseReply(final long request){
         if(destroyed||paused||!lifecycle.releaseReply(request))return;
-        // Complete the scene entrance before audio starts.
-        long delay=sceneBitmap==null?0:Math.max(0,SceneStage.ARRIVAL_MS-(SystemClock.uptimeMillis()-sceneStart));
-        ui.postDelayed(new Runnable(){public void run(){
-            if(!destroyed&&!paused&&lifecycle.current(request)&&lifecycle.phase().equals("voicing"))speakNext(request);
-        }},delay);
+        speakNext(request);
     }
     private void speakNext(final long request){
         if(destroyed||paused||!lifecycle.current(request))return;
         Reply next=speech.poll();
         if(next==null){
             if(!lifecycle.complete(request))return;
-            scenes.cancel();scenePending=false;sceneStatus="";
             reaction="neutral";reactionUntil=0;
-            setMode("complete","there you go");
-            ui.postDelayed(new Runnable(){public void run(){
-                if(!destroyed&&lifecycle.settle(request)){setMode("idle","ready when you are");refreshReady();}
-            }},COMPLETION_MS);
+            lifecycle.settle(request);
+            setMode("idle","ready when you are");
             return;
         }
         if(!voiceReady){block("voice unavailable — reopen Muse");return;}
@@ -188,7 +173,7 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
     }
     private OpenAiSpeech.Listener speechListener(final long request, final long chunk){
         return new OpenAiSpeech.Listener(){
-            public void started(){if(!destroyed&&chunk==playback&&lifecycle.started(request))setMode("speaking","muse is speaking");}
+            public void started(){if(!destroyed&&chunk==playback&&lifecycle.started(request)){android.util.Log.d("MuseVoice","Playback started; accepted_to_audio_ms="+(SystemClock.uptimeMillis()-acceptedAt));setMode("speaking","muse is speaking");}}
             public void done(){
                 if(destroyed||chunk!=playback||!lifecycle.current(request)||!lifecycle.phase().equals("speaking"))return;
                 if(!speech.isEmpty()&&!lifecycle.nextChunk(request))return;
@@ -198,18 +183,11 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
         };
     }
     private void interrupt(){interrupt(false);}
-    private void interrupt(boolean keepScene){
+    private void interrupt(boolean keepAnswer){
         recording=false;lifecycle.invalidate();turn=lifecycle.generation();++playback;
         level=0;speech.clear();reaction="neutral";reactionUntil=0;
         if(tts!=null)tts.stop();
-        if(keepScene){if(scenes!=null)scenes.cancel();scenePending=false;sceneStatus="";}
-        else {clearScene();previousContext="";}
-        sceneBeganWhileThinking=false;
-    }
-    private void clearScene(){
-        if(scenes!=null)scenes.cancel();
-        sceneStatus="";scenePending=false;sceneSubject="";
-        if(sceneBitmap!=null){sceneBitmap.recycle();sceneBitmap=null;}
+        if(!keepAnswer){answerText="";if(face!=null)face.setAnswer("");}
     }
     private void block(String message){
         interrupt();lifecycle.blocked();turn=lifecycle.generation();setMode("error",message);
@@ -220,9 +198,9 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
             try{Activity.class.getMethod("requestPermissions",String[].class,int.class).invoke(this,new Object[]{new String[]{"android.permission.RECORD_AUDIO"},7});}catch(Exception e){fail("microphone permission needed",e);}
             return;
         }
-        interrupt(true);transcript="";
+        interrupt();transcript="";
         final long request=lifecycle.listen();turn=request;recording=true;
-        setMode("recording","listening — release to send");
+        setMode("recording","muse is listening");
         face.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         new Thread(new Runnable(){public void run(){capture(request);}},"voice-capture").start();
         ui.postDelayed(new Runnable(){public void run(){if(recording&&turn==request)stopRecording();}},45000);
@@ -268,57 +246,21 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
         }
         finally{if(mic!=null){try{mic.stop();}catch(Exception ignored){}mic.release();}if(recognizer!=null)recognizer.close();if(turn==request)level=0;}
     }
-    private void generateScene(final String text,final long request){
-        sceneSubject=text;sceneStatus="muse is working";scenePending=true;
-        scenes.generate(text,previousContext,sceneListener(request));
-        ui.postDelayed(new Runnable(){public void run(){
-            if(!destroyed&&!paused&&lifecycle.current(request)&&scenePending)sceneFailed(request,"scene took too long — answering normally");
-        }},30000);
-    }
-    private OpenAiScene.Listener sceneListener(final long request){
-        return new OpenAiScene.Listener(){
-            public void image(Bitmap image){
-                if(destroyed||paused||!scenePending||!lifecycle.sceneActive(request)){image.recycle();return;}
-                sceneGeneratedThisTurn=true;
-                if(sceneBitmap!=null)sceneBitmap.recycle();sceneBitmap=image;
-                sceneArrivedBeforeSpeech=lifecycle.phase().equals("thinking")||lifecycle.phase().equals("voicing");
-                sceneStart=SystemClock.uptimeMillis();sceneStatus="";scenePending=false;face.invalidate();
-                lifecycle.resolveScene(request);releaseReply(request);
-                android.util.Log.d("MuseVoice","Fresh generated background displayed before speech");
-            }
-            public void failed(String hint){
-                if(!destroyed&&!paused&&scenePending&&lifecycle.sceneActive(request))sceneFailed(request,hint);
-            }
-        };
-    }
-    private void sceneFailed(long request,String hint){
-        clearScene();sceneStatus=hint;
-        lifecycle.resolveScene(request);releaseReply(request);face.invalidate();
-    }
     private void send(final String text,final long request){
-        sceneBeganWhileThinking=false;sceneArrivedBeforeSpeech=false;sceneGeneratedThisTurn=false;
-        transcript=text;
-        previousContext+="\nUser: "+text;
+        transcript=text;sentAt=SystemClock.uptimeMillis();
         final String token=lifecycle.token();
-        // Finalized dictation starts two independent jobs. The image model interprets
-        // the question itself; neither a remote command nor the answer gates it.
-        if(sceneBitmap==null&&lifecycle.prepareScene(token)==request){
-            sceneBeganWhileThinking=true;
-            generateScene(text,request);
-        }
-        final String sceneContext=sceneBitmap==null?"No current scene.":"Current scene subject: "+sceneSubject;
         final GadgetService target=service;
         new Thread(new Runnable(){public void run(){
             if(destroyed||turn!=request)return;
-            final boolean ok=target!=null&&target.sendChat("Voice message from the Meadow. Reply briefly by invoking voice.speak with text, reaction, turnId, and sceneDecision. Set sceneDecision to keep for follow-ups, clarifications, or next steps on the current subject (including checking email about the same package), and new only for a genuine change of subject. "+sceneContext+" . The device generates the first scene while you prepare your answer and retains it across follow-ups; do not wait for scene generation or issue scene commands. Copy this exact turnId: " + token + ". Use neutral, happy, curious, calm, working, or dance for conversational tone. Always finish this turn by invoking voice.speak with this message's turnId, including follow-up questions, requests you cannot fulfill, and tool failures. Never reuse a previous turnId. Do not offer email access or any external action unless you actually have that capability available; if unavailable, explain briefly through voice.speak. Do not imply external work or task progress; this device supports conversation and speech only. User said: " + text);
+            final boolean ok=target!=null&&target.sendChat("Voice message from the Meadow. Reply briefly by invoking voice.speak with text, reaction, turnId, and displayText. The complete text is spoken aloud. For displayText, provide only the key fact or a short visual caption, 3–10 words and at most 90 characters. Do not repeat the full answer on screen. This is drawn locally without image generation. Copy this exact turnId: " + token + ". Use neutral, happy, curious, calm, working, or dance for conversational tone. Always invoke voice.speak for this turn with this message's turnId, including follow-up questions, requests you cannot fulfill, and tool failures. Never reuse a previous turnId. Do not offer email access or any external action unless you actually have that capability available; if unavailable, explain briefly through voice.speak. Do not imply external work or task progress; this device supports conversation and speech only. "+VoiceBridge.CHAT_REPLY_INSTRUCTION+" User said: " + text);
             ui.post(new Runnable(){public void run(){if(!ok&&!destroyed&&turn==request&&lifecycle.phase().equals("thinking"))block("couldn’t reach muse — hold to retry");}});
         }},"send-to-muse").start();
         ui.postDelayed(new Runnable(){public void run(){if(!destroyed&&turn==request&&lifecycle.phase().equals("thinking")){android.util.Log.w("MuseVoice","Reply deadline reached without an accepted answer");block("no reply from muse — hold to retry");}}},90000);
     }
     private void fail(final String message,Exception e){android.util.Log.e("MuseVoice",message,e);ui.post(new Runnable(){public void run(){if(!destroyed)block(message);}});}
-    protected void onResume(){super.onResume();paused=false;if(face!=null&&!recording&&!mode.equals("speaking")&&!mode.equals("voicing")&&!mode.equals("scene-wait")&&!mode.equals("thinking"))face.greet();}
+    protected void onResume(){super.onResume();paused=false;if(face!=null&&!recording&&!mode.equals("speaking")&&!mode.equals("voicing")&&!mode.equals("thinking"))face.greet();}
     protected void onPause(){super.onPause();paused=true;interrupt();setMode("idle","ready when you are");refreshReady();}
-    protected void onDestroy(){interrupt();if(sceneBitmap!=null){sceneBitmap.recycle();sceneBitmap=null;}destroyed=true;ui.removeCallbacksAndMessages(null);if(service!=null)service.removeListener(this);if(bound)unbindService(connection);if(tts!=null){tts.stop();}super.onDestroy();}
+    protected void onDestroy(){interrupt();destroyed=true;ui.removeCallbacksAndMessages(null);if(service!=null)service.removeListener(this);if(bound)unbindService(connection);if(tts!=null){tts.stop();}super.onDestroy();}
     public boolean onKeyDown(int code,KeyEvent event){if(code==KeyEvent.KEYCODE_VOLUME_UP){if(event.getRepeatCount()==0)startRecording();return true;}return super.onKeyDown(code,event);}
     public boolean onKeyUp(int code,KeyEvent event){if(code==KeyEvent.KEYCODE_VOLUME_UP){stopRecording();return true;}return super.onKeyUp(code,event);}
 
@@ -352,25 +294,18 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
         private float audioLevel, renderedBob, renderedTilt, renderedZoom=1;
         private long lastFrame;
         private final Typeface statusFont=Typeface.create("sans-serif",Typeface.NORMAL);
-        private long greetingUntil, visualStart, labelStart;
-        private String visualMode="", label="", previousLabel="", detail="", previousDetail="";
+        private long greetingUntil, visualStart;
+        private String visualMode="", label="", detail="";
 
         void greet(){greetingUntil=SystemClock.uptimeMillis()+4000;invalidate();}
-        private boolean isWorking(){return !recording&&(mode.equals("thinking")||scenePending);}
-        private float sceneOpacity(long now){return sceneBitmap==null||recording?0:1;}
-        private float sceneMuseOpacity(long now){return sceneBitmap==null||recording?0:SceneStage.characterAlpha(now-sceneStart);}
+        private boolean isWorking(){return !recording&&(mode.equals("thinking")||mode.equals("voicing"));}
+        private boolean captionVisible(){return !answerText.isEmpty()&&!recording&&(mode.equals("speaking")||mode.equals("idle"));}
         private int restingFrameTime(long now){
             long blink=(now-start)%5200;
             return blink<400?(int)blink:blink<800?(int)(800-blink):0;
         }
         private int frameTime(long now){
             if(mode.equals("error")||mode.equals("connecting"))return 0; // Paused: no idle breathing/blinks.
-            if(mode.equals("complete")){
-                long elapsed=now-visualStart;
-                if(elapsed>=COMPLETION_MS)return 0;
-                // One original wave, beginning and ending with the hand lowered.
-                return (int)Math.min(idle.duration()-1,Math.max(0,elapsed)*idle.duration()/COMPLETION_MS);
-            }
             if(isWorking()&&working!=null)return (int)((now-visualStart)%Math.max(working.duration(),1));
             if(recording)return (int)((now-visualStart)%Math.max(idle.duration(),1));
             if(mode.equals("idle")&&now<greetingUntil)
@@ -394,7 +329,6 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
         private void text(Canvas c,String s,float x,float y,float size,int color,Paint.Align align){
             p.setColor(color);p.setTextSize(size);p.setTextAlign(align);
             p.setTypeface(statusFont);
-            if(sceneOpacity(SystemClock.uptimeMillis())>0){p.setColor(Color.WHITE);p.setShadowLayer(3,0,1,Color.argb(190,0,0,0));}
             c.drawText(s,x,y,p);p.clearShadowLayer();
         }
         private void message(Canvas c,String s,float y){
@@ -414,30 +348,21 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
             c.drawText(subtitle,360,668+offset,p);p.clearShadowLayer();
         }
         private void statusLabel(Canvas c,String title,String subtitle,long now){
-            if(!title.equals(label)||!subtitle.equals(detail)){
-                previousLabel=label;previousDetail=detail;label=title;detail=subtitle;labelStart=now;
-            }
-            float progress=Math.min(1,(now-labelStart)/260f);
-            float ease=1-(1-progress)*(1-progress)*(1-progress);
-            if(ease<1)labelLine(c,previousLabel,previousDetail,-8*ease,1-ease);
-            labelLine(c,label,detail,8*(1-ease),ease);
+            // State labels change with the pose/caption, without showing the old state.
+            label=title;detail=subtitle;
+            labelLine(c,title,subtitle,0,1);
         }
         protected void onDraw(Canvas c){
             super.onDraw(c);
-            float opacity=sceneOpacity(SystemClock.uptimeMillis());
-            boolean scenic=opacity>0;
+            boolean card=captionVisible();
             c.drawColor(background);
             float scale=Math.min(getWidth(),getHeight())/720f;
             c.save();c.translate((getWidth()-720*scale)/2,(getHeight()-720*scale)/2);c.scale(scale,scale);
-            if(scenic){
-                int sceneLayer=c.saveLayerAlpha(0,0,720,720,(int)(255*opacity),Canvas.ALL_SAVE_FLAG);
-                p.setAlpha(255);c.drawBitmap(sceneBitmap,null,new RectF(0,0,720,720),p);
-                c.restoreToCount(sceneLayer);
-            }
             long now=SystemClock.uptimeMillis(),elapsed=now-start;
             float t=elapsed/1000f;
-            if(!mode.equals(visualMode)){
-                visualMode=mode;visualStart=now;
+            String nextVisual=isWorking()?"working":mode;
+            if(!nextVisual.equals(visualMode)){
+                visualMode=nextVisual;visualStart=now;
                 if(recording||isWorking()||mode.equals("speaking"))greetingUntil=0;
             }
             boolean thinking=isWorking();
@@ -447,13 +372,7 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
 
             Movie character=thinking&&working!=null?working:idle;
             float bob=(float)Math.sin(t*1.7)*2,tilt=0,zoom=1;
-            if(mode.equals("complete")){
-                // Two joyful hops, then a quiet landing. Only final playback completion enters here.
-                float hop=Math.min(1,phaseTime/1.25f);
-                bob=hop<1?-30*Math.abs((float)Math.sin(hop*2*Math.PI))*(1-.4f*hop):0;
-                tilt=5*(float)Math.sin(phaseTime*7)*Math.max(0,1-phaseTime/2f);
-            }
-            else if(mode.equals("error")||mode.equals("connecting")){
+            if(mode.equals("error")||mode.equals("connecting")){
                 // A brief head shake, then hold a visibly lowered, tilted pose until recovery.
                 tilt=-7+7*(float)Math.sin(phaseTime*12)*Math.max(0,1-phaseTime/.8f);
                 bob=28;zoom=1.04f;
@@ -468,7 +387,7 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
             float blend=lastFrame==0?1:Math.min(1,(now-lastFrame)/180f);lastFrame=now;
             renderedBob+=(bob-renderedBob)*blend;renderedTilt+=(tilt-renderedTilt)*blend;renderedZoom+=(zoom-renderedZoom)*blend;
             bob=renderedBob;tilt=renderedTilt;zoom=renderedZoom;
-            if(!scenic&&character!=null){
+            if(character!=null){
                 // The source is tightly framed: let its sides meet the screen edges,
                 // rather than clipping the waving hand inside a smaller stage.
                 int layer=c.saveLayer(0,0,720,720,null,Canvas.ALL_SAVE_FLAG);
@@ -480,20 +399,7 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
                 p.setShader(new LinearGradient(0,490,0,610,Color.BLACK,Color.TRANSPARENT,Shader.TileMode.CLAMP));
                 p.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_IN));c.drawRect(0,0,720,720,p);
                 p.setXfermode(null);p.setShader(null);c.restoreToCount(layer);
-            }else if(!scenic){message(c,"couldn’t load muse — reopen the app",350);}
-
-            float museAlpha=sceneMuseOpacity(now);
-            if(scenic&&idle!=null&&museAlpha>0){
-                // A fresh entrance of normal Muse, never a crossfade from the laptop clip.
-                Bitmap original=characterCutout(idle,restingFrameTime(now));
-                float sceneBob=Math.max(-16,Math.min(16,bob));
-                float sceneTilt=Math.max(-7,Math.min(7,tilt));
-                float sceneZoom=Math.max(.98f,Math.min(1.04f,zoom));
-                p.setAlpha((int)(255*museAlpha));
-                c.save();c.translate(360,SceneStage.centerY(sceneBob,sceneTilt,sceneZoom,museAlpha));
-                c.rotate(sceneTilt);c.scale(sceneZoom*SceneStage.SCALE,sceneZoom*SceneStage.SCALE);
-                c.translate(-360,-360);c.drawBitmap(original,null,new RectF(0,0,720,720),p);c.restore();p.setAlpha(255);
-            }
+            }else {message(c,"couldn’t load muse — reopen the app",350);}
 
             String status=connected?"connected":"disconnected";
             p.setTextSize(19);
@@ -506,6 +412,7 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
             // The same soft frosted footer in every conversational state.
             p.setShader(new LinearGradient(0,555,0,625,new int[]{Color.argb(0,247,247,247),Color.argb(235,247,247,247)},null,Shader.TileMode.CLAMP));
             c.drawRect(0,555,720,720,p);p.setShader(null);p.setAlpha(255);
+            if(card)drawAnswer(c);
             if(recording||speaking){
                 audioLevel+=(Math.min(1,level*5)-audioLevel)*.3f;
                 for(int i=0;i<9;i++){
@@ -516,8 +423,8 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
             }else if(thinking){
                 for(int i=0;i<3;i++){p.setColor(Color.argb(90+(int)(100*(.5+.5*Math.sin(t*4-i))),139,127,163));c.drawCircle(344+i*16,594,4,p);}
             }
-            String hint=recording?"i’m listening":(thinking||mode.equals("scene-wait")||mode.equals("voicing"))?"muse is working":mode.equals("complete")?"there you go":speaking?"muse is speaking":scenePending?"muse is working":"hold muse to talk";
-            String sub=recording?"release to send":(speaking||thinking||mode.equals("voicing")||mode.equals("scene-wait"))?"hold to interrupt":sceneStatus;
+            String hint=recording?"muse is listening":(thinking||mode.equals("voicing"))?"muse is working":speaking?"muse is speaking":"hold muse to talk";
+            String sub=recording?"release to send":(speaking||thinking||mode.equals("voicing"))?"hold to interrupt":"";
             if(mode.equals("error")||mode.equals("connecting")){
                 statusLabel(c,"i’m paused","",now);
                 message(c,mode.equals("error")?caption:"open Muse on your phone to connect",675);
@@ -528,6 +435,28 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
             else statusLabel(c,hint,sub,now);
             c.restore();
             postInvalidateDelayed(66);
+        }
+        private final ArrayList<String> answerLines=new ArrayList<String>();
+        private boolean answerRendered;
+        void setAnswer(String answer){
+            answerLines.clear();answerRendered=false;
+            p.setTypeface(statusFont);p.setTextSize(25);
+            String rest=answer.replaceAll("\\s+", " ").trim();
+            while(!rest.isEmpty()&&answerLines.size()<2){
+                int count=Math.max(1,p.breakText(rest,true,570,null));
+                if(count<rest.length()){int space=rest.lastIndexOf(' ',count);if(space>0)count=space;}
+                String line=rest.substring(0,count);rest=rest.substring(count).trim();
+                if(answerLines.size()==1&&!rest.isEmpty())line=line+"…";
+                answerLines.add(line);
+            }
+            invalidate();
+        }
+        private void drawAnswer(Canvas c){
+            if(!answerRendered){answerRendered=true;android.util.Log.d("MuseVoice","Answer caption rendered; accepted_to_card_ms="+(SystemClock.uptimeMillis()-acceptedAt));}
+            float top=answerLines.size()==1?557:529;
+            p.setShader(new LinearGradient(0,495,0,575,Color.argb(0,247,247,247),Color.rgb(247,247,247),Shader.TileMode.CLAMP));
+            c.drawRect(0,495,720,720,p);p.setShader(null);
+            for(int line=0;line<answerLines.size();line++)text(c,answerLines.get(line),360,top+line*30,25,Color.rgb(66,60,78),Paint.Align.CENTER);
         }
         public boolean performClick(){
             super.performClick();if(recording)stopRecording();else startRecording();return true;

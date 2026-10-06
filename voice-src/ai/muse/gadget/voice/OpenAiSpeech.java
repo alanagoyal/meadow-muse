@@ -96,7 +96,7 @@ public final class OpenAiSpeech {
             int minimum=AudioTrack.getMinBufferSize(PcmStream.SAMPLE_RATE,AudioFormat.CHANNEL_OUT_MONO,AudioFormat.ENCODING_PCM_16BIT);
             if(minimum<=0)throw new IOException("PCM playback unavailable");
             track=new AudioTrack(AudioManager.STREAM_MUSIC,PcmStream.SAMPLE_RATE,AudioFormat.CHANNEL_OUT_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,Math.max(minimum,4800),AudioTrack.MODE_STREAM);
+                AudioFormat.ENCODING_PCM_16BIT,Math.max(minimum,PcmStream.STARTUP_BYTES),AudioTrack.MODE_STREAM);
             if(track.getState()!=AudioTrack.STATE_INITIALIZED)throw new IOException("PCM playback unavailable");
             // The bundled compile jar predates API 23; Meadow's runtime is API 29+.
             // Resolve the nonblocking API once, never fall back to a UI-blocking write.

@@ -6,6 +6,8 @@ import java.io.InputStream;
 /** Bounded PCM transfer. Network chunks need not end on a 16-bit sample boundary. */
 final class PcmStream {
     static final int SAMPLE_RATE=24000;
+    // Half a second of mono PCM absorbs gaps between the first network chunks.
+    static final int STARTUP_BYTES=SAMPLE_RATE*2/2;
     private static final long MAX_BYTES=8L*1024*1024;
     interface Output {
         boolean cancelled();
@@ -23,6 +25,7 @@ final class PcmStream {
         int pending=0;
         long total=0,written=0;
         boolean started=false;
+        final int startupBytes=out.minimumStartBytes();
         while(!out.cancelled()) {
             int n=in.read(bytes,pending,bytes.length-pending);
             if(out.cancelled())return false;
@@ -43,18 +46,18 @@ final class PcmStream {
                 }
                 offset+=count;written+=count;progress=out.now();
                 if(out.cancelled())return false;
-                if(!started){out.start();started=true;}
+                if(!started&&written>=startupBytes){out.start();started=true;}
             }
             pending=available-aligned;
             if(pending!=0)bytes[0]=bytes[aligned];
         }
         if(out.cancelled())return false;
         if(pending!=0)throw new IOException("Incomplete PCM sample");
-        if(!started)throw new IOException("Empty speech response");
+        if(written==0)throw new IOException("Empty speech response");
         out.receivedEnd(total);
-        // Android may wait for its startup threshold even after play(). Pad a tiny
-        // response with silence so it can start; normal responses need no padding.
-        long target=Math.max(written,out.minimumStartBytes());
+        // Fill the track before starting, including short replies that reach EOF
+        // before the startup threshold. Padding follows speech, never precedes it.
+        long target=Math.max(written,startupBytes);
         java.util.Arrays.fill(bytes,(byte)0);
         long paddingProgress=out.now();
         while(written<target) {
@@ -68,6 +71,8 @@ final class PcmStream {
             }
             written+=count;paddingProgress=out.now();
         }
+        if(out.cancelled())return false;
+        if(!started)out.start();
         // AudioTrack.write queues frames; EOF is not playback completion.
         long frames=written/2,lastPlayed=-1,progress=out.now();
         while(!out.cancelled()) {
