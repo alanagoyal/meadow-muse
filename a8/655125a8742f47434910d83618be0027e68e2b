@@ -1,0 +1,35 @@
+README.md
+  s_94c099d0388ff7::t_24c58c55e599b6 3,5
+docs/conversation-states.md
+  s_94c099d0388ff7::t_08e24a8721bc9c 1-65
+docs/generative-scenes.md
+  s_94c099d0388ff7::t_a0ff827f028cf6 1-2
+stage.json
+  s_94c099d0388ff7::t_71007e8b09e9cf 2-3
+tests/TurnLifecycleTest.java
+  s_94c099d0388ff7::t_7fa23ec52058b4 34-43
+voice-src/ai/muse/gadget/voice/TurnLifecycle.java
+  s_94c099d0388ff7::t_52c76794a05073 8,24,26,41
+voice-src/ai/muse/gadget/voice/VoiceActivity.java
+  s_94c099d0388ff7::t_9e4a45976dac6e 25-26,97,102,121,124,133-134,137-139,146-147,149,157,165-166,176,186,190,201,203,250,255,261,263,297-298,301-302,351-353,357,363-365,375,390,402,415,426-427,439-460
+voice-src/ai/muse/gadget/voice/VoiceBridge.java
+  s_94c099d0388ff7::t_bf1c0266e55751 6,11,18,26,34-35
+voice-src/ai/muse/gadget/voice/VoiceVerification.java
+  s_94c099d0388ff7::t_0b3824a45dff46 2,5,7-8,10-16,18-26,28-39,41-64,66,71-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a8655125a8742f47434910d83618be0027e68e2b",
+  "prompts": {},
+  "sessions": {
+    "s_94c099d0388ff7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a111b7-4f85-7131-8687-ed79f0bfc0fe",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alanagoyal <alanaan@gmail.com>"
+    }
+  }
+}
