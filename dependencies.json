@@ -48,10 +48,5 @@
     "path": "tools/voice/model.zip",
     "url": "https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip",
     "sha256": "30f26242c4eb449f948e42cb302dd7a686cb29a3423a8367f99ff41780942498"
-  },
-  {
-    "path": "tools/voice/rhvoice.apk",
-    "url": "https://f-droid.org/repo/com.github.olga_yakovleva.rhvoice.android_118040.apk",
-    "sha256": "fdb0f7d6f3ec455477a84aa8cc86d1f2d580cb180d69a0c780240975c2efd288"
   }
 ]

@@ -26,7 +26,7 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
     private ScrollView scroll;
     private float scale;
     private OfflineDictation dictation;
-    private RhVoiceSpeech speech;
+    private OpenAiChatSpeech speech;
     private MicButton mic;
     private boolean dictating;
     private long outputGeneration;
@@ -51,7 +51,7 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
         composer.addView(input,new LinearLayout.LayoutParams(0,-2,1));
         SendButton send=new SendButton();composer.addView(send,new LinearLayout.LayoutParams(px(48),px(48)));send.setOnClickListener(new View.OnClickListener(){public void onClick(View v){sendInput();}});
         LinearLayout.LayoutParams bottom=new LinearLayout.LayoutParams(-1,-2);bottom.setMargins(px(24),px(8),px(24),px(20));root.addView(composer,bottom);setContentView(root);input.requestFocus();
-        speech=new RhVoiceSpeech(this);
+        speech=new OpenAiChatSpeech(this);
         dictation=new OfflineDictation(this,new OfflineDictation.Listener(){
             public void ready(){if(!destroyed)mic.setEnabled(true);}
             public void text(String words){if(destroyed||paused)return;dictating=false;mic.invalidate();input.setText(words);input.setSelection(input.length());status.setText(words.isEmpty()?"Didn’t catch that. Try again.":"");}
@@ -77,7 +77,7 @@ public class VoiceActivity extends Activity implements GadgetService.StateListen
     private void sendInput(){
         final String text=input.getText().toString().trim();if(text.isEmpty()||paused||destroyed)return;
         if(dictating){dictation.stop();return;}
-        if(!speech.ready()){status.setText("Set up RHVoice before sending.");return;}
+        if(!speech.ready()){status.setText("Set up the OpenAI speech key before sending.");return;}
         if(!connected||service==null){status.setText("Open Muse on your phone to connect.");return;}
         cancel();input.setText("");((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(input.getWindowToken(),0);
         TextView user=label(text,25);user.setPadding(px(20),px(14),px(20),px(14));user.setBackgroundDrawable(round(0xfff2f2f2,23));

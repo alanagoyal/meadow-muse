@@ -1,5 +1,5 @@
 {
-  "stage": 2,
-  "title": "Text and dictation with RHVoice",
+  "stage": 3,
+  "title": "Text and dictation with OpenAI TTS",
   "assets": []
 }

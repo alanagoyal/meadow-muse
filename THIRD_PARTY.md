@@ -15,5 +15,4 @@ artwork. Those files are not included in any commit.
 
 Pass these assets to `prepare.py --assets /path/to/assets`. Imported code and
 assets stay in ignored `patched/`. Downloads in `dependencies.json` are pinned
-by SHA-256 and retain their own licenses. RHVoice and its voice data are
-installed separately. Muse requires an account.
+by SHA-256 and retain their own licenses. Muse and OpenAI require their respective accounts.
