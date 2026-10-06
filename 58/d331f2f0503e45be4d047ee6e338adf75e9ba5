@@ -1,0 +1,27 @@
+README.md
+  s_94c099d0388ff7::t_caf6ce6aadd571 3,5
+stage.json
+  s_94c099d0388ff7::t_f4268aaec8d1bb 2-6
+voice-src/ai/muse/gadget/voice/VoiceActivity.java
+  s_94c099d0388ff7::t_3137fa928ac00f 8,11-16,19,21-36,38-77,79-85,87-91,93-110,113-124,126-154,156-161,163-209
+voice-src/ai/muse/gadget/voice/VoiceBridge.java
+  s_94c099d0388ff7::t_faf82d980036a0 6-25
+voice-src/ai/muse/gadget/voice/VoiceVerification.java
+  s_94c099d0388ff7::t_f9d497666b86e1 5-6,8-10,12,16-18,20-32,35-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "58d331f2f0503e45be4d047ee6e338adf75e9ba5",
+  "prompts": {},
+  "sessions": {
+    "s_94c099d0388ff7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a111b7-4f85-7131-8687-ed79f0bfc0fe",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "alanagoyal <alanaan@gmail.com>"
+    }
+  }
+}
